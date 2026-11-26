@@ -18,6 +18,12 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: BASE=/${{ github.event.repository.name }}/ npm run build
+        env:
+          # Optional relay (TURN) server so every device can connect. Set these in
+          # Settings → Secrets and variables → Actions (see README).
+          VITE_TURN_URLS: ${{ vars.TURN_URLS }}
+          VITE_TURN_USER: ${{ vars.TURN_USER }}
+          VITE_TURN_PASS: ${{ secrets.TURN_PASS }}
       - uses: actions/upload-pages-artifact@v3
         with: { path: packages/client/dist }
   deploy:

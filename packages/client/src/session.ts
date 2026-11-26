@@ -92,7 +92,7 @@ export class ClientSession implements Session {
   deniedCbs: ((r: string) => void)[] = [];
   constructor(public room: RoomClient, public code: string) {
     room.onStatus = (st) => {
-      this.status = { connecting: 'Connecting…', open: 'Connected', lost: 'Connection lost, reconnecting…', failed: 'Could not reach the room' }[st];
+      this.status = { connecting: 'Connecting…', open: 'Connected', lost: 'Connection lost, reconnecting…', failed: "Couldn't connect to the room. Check the code, make sure the host's screen is still open, then try again. If it keeps failing on this device, the game needs a relay server (see the README)." }[st];
       this.changeCbs.forEach((f) => f());
     };
     room.onMessage = (m: ToClient) => {

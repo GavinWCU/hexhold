@@ -22,17 +22,29 @@ export interface PublicSeat { name: string; color: string; kind: Seat['kind']; l
 
 const PREFIX = 'hexhold-room-';
 
+/** STUN finds a direct route; TURN relays traffic when two devices can't reach each other directly
+ *  (e.g. an Android/Windows device and a Mac on the same Wi-Fi). TURN comes from build-time env vars
+ *  (set as GitHub repo variables, see README). PeerJS's own fallback relay is dead, so it isn't used. */
+function iceServers(): RTCIceServer[] {
+  const env = import.meta.env;
+  const list: RTCIceServer[] = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
+  const urls = String(env.VITE_TURN_URLS ?? '').split(',').map((u) => u.trim()).filter(Boolean);
+  if (urls.length) list.push({ urls, username: env.VITE_TURN_USER, credential: env.VITE_TURN_PASS });
+  return list;
+}
+
 /** PeerJS options. Defaults to the free public PeerJS server; URL params override for self-hosting/tests. */
 export function peerOptions(): PeerOptions {
   const q = new URLSearchParams(location.search);
   const host = q.get('peerHost');
-  if (!host) return { debug: 1 };
+  const base = { debug: 1, config: { iceServers: iceServers() } };
+  if (!host) return base;
   return {
+    ...base,
     host,
     port: Number(q.get('peerPort') ?? 9000),
     path: q.get('peerPath') ?? '/',
     secure: q.get('peerSecure') === '1',
-    debug: 1,
   };
 }
 
@@ -106,6 +118,7 @@ export class RoomClient {
   onStatus: (s: 'connecting' | 'open' | 'lost' | 'failed') => void = () => {};
   private closed = false;
   private tries = 0;
+  private everOpened = false;
   private pinger = setInterval(() => { if (this.conn?.open) this.conn.send({ t: 'ping' } satisfies ToHost); }, 2000);
 
   constructor(public code: string, private name: string, private password?: string) {
@@ -121,18 +134,28 @@ export class RoomClient {
     this.onStatus('connecting');
     const conn = this.peer.connect(PREFIX + this.code, { reliable: true });
     this.conn = conn;
+    // A direct link that can't be made (and no relay) never opens or errors, so give each attempt 12 s.
+    const timer = setTimeout(() => {
+      if (conn.open || this.conn !== conn || this.closed) return;
+      this.conn = null;
+      conn.close();
+      this.retry();
+    }, 12000);
     conn.on('open', () => {
+      clearTimeout(timer);
       this.tries = 0;
+      this.everOpened = true;
       this.onStatus('open');
       conn.send({ t: 'hello', name: this.name, password: this.password } satisfies ToHost);
     });
     conn.on('data', (d) => this.onMessage(d as ToClient));
-    conn.on('close', () => { if (!this.closed) { this.onStatus('lost'); this.retry(); } });
+    conn.on('close', () => { clearTimeout(timer); if (!this.closed && this.conn === conn) { this.onStatus('lost'); this.retry(); } });
   }
 
   private retry() {
     if (this.closed) return;
-    if (++this.tries > 30) { this.onStatus('failed'); return; }
+    // Never connected: give up after 4 tries (~1 min) with a clear message. Dropped mid-game: keep trying longer.
+    if (++this.tries > (this.everOpened ? 30 : 4)) { this.onStatus('failed'); return; }
     setTimeout(() => { if (!this.closed) { if (this.peer.disconnected) this.peer.reconnect(); this.connect(); } }, Math.min(5000, 800 * this.tries));
   }
 

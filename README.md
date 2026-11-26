@@ -20,7 +20,19 @@ A private hex-island trading game for you and your friends. Plays in the browser
 
 Online rooms connect browsers directly (WebRTC) using the free public PeerJS server to find each other. Nothing about your games is stored on a server.
 
-If a friend can't connect (some strict work or school networks block direct connections), you can run your own PeerJS server (`npx peerjs --port 9000`) and add `?peerHost=your.server&peerPort=9000&peerSecure=1` to the link.
+### If a device can't connect (stuck on "Connecting", then "Couldn't connect")
+
+Some devices can't reach each other directly, even on the same Wi-Fi. Android, Windows and some routers are common culprits, while Apple devices usually connect fine with each other. The fix is a free **relay (TURN) server**, which passes game messages along when a direct link fails:
+
+1. Sign up for a free TURN service, for example metered.ca (Open Relay). Create an app and copy its TURN **URLs**, **username** and **credential**.
+2. In the GitHub repo go to **Settings → Secrets and variables → Actions**:
+   - **Variables** tab: add `TURN_URLS`, a comma-separated list such as `turn:global.relay.metered.ca:80,turn:global.relay.metered.ca:80?transport=tcp,turn:global.relay.metered.ca:443,turns:global.relay.metered.ca:443?transport=tcp`, and add `TURN_USER` with the username.
+   - **Secrets** tab: add `TURN_PASS` with the credential.
+3. **Actions → Deploy to GitHub Pages → Run workflow.** After about 2 minutes every device can connect.
+
+For local builds, put the same values in `packages/client/.env.local` as `VITE_TURN_URLS`, `VITE_TURN_USER` and `VITE_TURN_PASS`.
+
+If the PeerJS signaling server itself is blocked (some strict work or school networks), run your own (`npx peerjs --port 9000`) and add `?peerHost=your.server&peerPort=9000&peerSecure=1` to the link.
 
 ## Develop
 
