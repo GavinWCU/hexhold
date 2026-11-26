@@ -1,0 +1,26 @@
+{
+  "name": "hexhold",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "dev": "npm -w @hexhold/client run dev",
+    "build": "npm -w @hexhold/client run build",
+    "screenshots": "node scripts/screenshots.mjs",
+    "preview": "npm -w @hexhold/client run preview",
+    "e2e:solo": "node e2e/solo.mjs pixel3d",
+    "e2e:features": "node e2e/features.mjs",
+    "e2e:online": "node e2e/online.mjs",
+    "e2e:tutorial": "node e2e/tutorial.mjs"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "peer": "^1.0.2",
+    "playwright-core": "^1.65.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.2"
+  }
+}

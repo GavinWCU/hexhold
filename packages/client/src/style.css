@@ -1,0 +1,212 @@
+html, body { margin: 0; height: 100%; overflow: hidden; background: #241c2b; }
+#view { position: fixed; inset: 0; display: block; }
+#hud { position: fixed; inset: 0; pointer-events: none; font-family: 'Press Start 2P', monospace; color: #fffaf2; }
+#hud * { box-sizing: border-box; }
+.px { image-rendering: pixelated; width: 24px; height: 24px; }
+
+/* chunky outlined display text */
+.title, .banner, .big, .vp, .me-name, .cnt, .btn, .opp-name {
+  font-family: 'Lilita One', sans-serif; letter-spacing: 0.5px;
+  -webkit-text-stroke: 5px #241c2b; paint-order: stroke fill;
+}
+.title { position: absolute; top: 10px; left: 14px; font-size: 30px; color: #f2c14e; transform: rotate(-3deg); }
+.banner { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 34px; color: #fffaf2; white-space: nowrap; }
+.opps { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+.opp { background: rgba(36, 28, 43, 0.82); border: 3px solid #241c2b; box-shadow: inset 0 0 0 3px var(--c); padding: 8px 10px; min-width: 190px; }
+.opp-name { font-size: 18px; color: var(--c); }
+.opp-stats { display: flex; gap: 10px; font-size: 9px; margin-top: 5px; }
+.badge { display: inline-block; margin-top: 5px; font-size: 8px; background: #f2c14e; color: #241c2b; padding: 3px 5px; }
+.me { position: absolute; left: 12px; bottom: 12px; background: rgba(36, 28, 43, 0.85); border: 3px solid #241c2b; box-shadow: inset 0 0 0 3px var(--c); padding: 10px; }
+.me-top { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.me-name { font-size: 22px; color: var(--c); }
+.vp { font-size: 22px; color: #f2c14e; }
+.dice { display: flex; gap: 4px; }
+.dice b { display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center; background: #fffaf2; color: #241c2b; border: 3px solid #241c2b; font-size: 12px; }
+.hand, .row { display: flex; gap: 6px; }
+.col { display: flex; flex-direction: column; gap: 6px; align-items: center; margin: 8px 0; }
+.card { width: 62px; height: 82px; background: var(--rc); border: 3px solid #241c2b; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.18), inset 0 3px 0 rgba(255,255,255,0.35); display: flex; flex-direction: column; align-items: center; justify-content: space-around; }
+.card.sm { width: 46px; height: 58px; }
+.card .cnt { font-size: 22px; color: #fffaf2; }
+.card .lbl { font-size: 6px; color: #241c2b; }
+.builds { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.btn { font-size: 15px; background: #e3a52f; color: #fffaf2; border: 3px solid #241c2b; padding: 6px 10px; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.25); -webkit-text-stroke: 4px #241c2b; }
+.btn.end { background: #5b3a7a; }
+.btn.go { background: #3f9a4a; }
+.dialog { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(36,28,43,0.92); border: 4px solid #241c2b; box-shadow: inset 0 0 0 4px #f2c14e; padding: 18px 22px; text-align: center; min-width: 320px; }
+.dialog .big { font-size: 40px; color: #f2c14e; }
+.dialog .small { font-size: 10px; margin: 10px 0 12px; line-height: 1.6; }
+.dialog .row { justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+.pill { font-size: 10px; padding: 6px 8px; border: 3px solid #241c2b; background: var(--c); color: #241c2b; }
+.tag { position: absolute; bottom: 6px; right: 8px; font-size: 7px; opacity: 0.7; }
+
+@media (max-width: 600px) {
+  .title { font-size: 20px; }
+  .banner { top: 44px; font-size: 22px; }
+  .opps { top: 76px; left: 8px; right: 8px; flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .opp { min-width: 0; flex: 1; padding: 5px; }
+  .opp-name { font-size: 13px; }
+  .opp-stats { font-size: 6px; gap: 5px; flex-wrap: wrap; }
+  .badge { font-size: 6px; }
+  .me { left: 6px; right: 6px; bottom: 6px; padding: 7px; }
+  .card { width: auto; flex: 1; height: 66px; }
+  .card .cnt { font-size: 18px; }
+  .card .lbl { font-size: 5px; }
+  .btn { font-size: 12px; padding: 4px 6px; }
+  .dialog { min-width: 0; width: 92%; padding: 12px; }
+  .dialog .big { font-size: 30px; }
+  .px { width: 18px; height: 18px; }
+}
+
+.star { color: #f2c14e; font-family: "Lilita One"; font-size: 12px; }
+
+/* ---------- live game HUD ---------- */
+#hud.live .topbar, #hud.live .opps, #hud.live .me, #hud.live .dialog, #hud.live .log, #hud.live .toast { pointer-events: auto; }
+.topbar { position: absolute; top: 0; left: 0; right: 0; height: 56px; pointer-events: none; }
+#hud.live .topbar > * { pointer-events: auto; }
+.iconbtn { position: absolute; top: 10px; right: 12px; width: 44px; height: 40px; font-size: 22px; background: #5b3a7a; color: #fffaf2; border: 3px solid #241c2b; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.25); cursor: pointer; }
+#hud.live .opps { top: 60px; }
+.opp.active { box-shadow: inset 0 0 0 3px var(--c), 0 0 0 3px #f2c14e; }
+.opp-tag { font-size: 7px; margin-top: 5px; opacity: 0.8; }
+.roomtag { position: absolute; top: 58px; left: 14px; font-size: 8px; background: rgba(36,28,43,0.8); padding: 5px 7px; }
+.btn { cursor: pointer; font-family: 'Lilita One', sans-serif; }
+.btn:disabled { filter: grayscale(0.8) brightness(0.7); cursor: default; }
+.btn.on { background: #f2c14e; color: #241c2b; -webkit-text-stroke: 0; }
+.btn.big { font-size: 22px; padding: 8px 18px; }
+.btn.sm { font-size: 12px; padding: 4px 8px; }
+.btn.alt { background: #6a6276; }
+.btn i { font-style: normal; display: inline-flex; gap: 1px; margin-left: 4px; vertical-align: middle; }
+.px.xs { width: 12px; height: 12px; }
+.pieces { font-size: 8px; opacity: 0.8; }
+.card.charter { background: #5b3a7a; cursor: pointer; }
+.dice { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+.dice b { width: 44px; height: 44px; line-height: 44px; font-size: 22px; text-align: center; background: #fffaf2; color: #241c2b; border: 4px solid #241c2b; box-shadow: inset 0 -5px 0 rgba(0,0,0,0.15); font-family: 'Press Start 2P'; }
+.dice.seven b { background: #f2a0a0; }
+.dice.rolling b { animation: roll 0.55s steps(6); }
+.dice.rolling b:nth-child(2) { animation-delay: 0.05s; }
+@keyframes roll { 0% { transform: translateY(-40px) rotate(-90deg); } 60% { transform: translateY(6px) rotate(20deg); } 100% { transform: none; } }
+.log { position: absolute; right: 12px; bottom: 12px; width: 300px; background: rgba(36,28,43,0.8); border: 3px solid #241c2b; padding: 6px 8px; font-size: 7px; line-height: 1.7; cursor: pointer; }
+.log.open { max-height: 60vh; overflow: auto; font-size: 8px; }
+.toast { position: absolute; left: 50%; top: 120px; transform: translateX(-50%); background: #d23b3b; color: #fffaf2; padding: 8px 12px; border: 3px solid #241c2b; font-size: 9px; }
+.dialog.wide { min-width: 420px; }
+.dialog .counters { display: flex; gap: 6px; justify-content: center; margin: 6px 0 10px; flex-wrap: wrap; }
+.ctr { background: var(--rc); border: 3px solid #241c2b; padding: 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 52px; }
+.ctr b { font-family: 'Lilita One'; font-size: 18px; -webkit-text-stroke: 4px #241c2b; paint-order: stroke fill; }
+.ctr button { width: 34px; height: 26px; font-size: 16px; border: 2px solid #241c2b; background: #fffaf2; cursor: pointer; }
+.pick { background: var(--rc); border: 3px solid #241c2b; padding: 5px 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-family: 'Press Start 2P'; font-size: 7px; color: #241c2b; }
+.pick.on { box-shadow: 0 0 0 3px #f2c14e; transform: translateY(-2px); }
+.tabs { display: flex; gap: 4px; justify-content: center; margin: 6px 0 10px; }
+.tabs button { font-family: 'Press Start 2P'; font-size: 8px; padding: 6px 8px; border: 3px solid #241c2b; background: #6a6276; color: #fff; cursor: pointer; }
+.tabs button.on { background: #f2c14e; color: #241c2b; }
+.chrow { display: flex; gap: 10px; align-items: center; justify-content: space-between; text-align: left; margin: 8px 0; border-bottom: 2px solid #3a2f44; padding-bottom: 8px; }
+.chrow b { font-family: 'Lilita One'; font-size: 16px; }
+.dim { opacity: 0.6; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row.center { justify-content: center; margin: 8px 0; }
+.row.wrap { flex-wrap: wrap; }
+.dialog .col .btn { width: 100%; }
+
+/* ---------- menus ---------- */
+#app { position: fixed; inset: 0; }
+.screen { position: fixed; inset: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 28px 14px 40px; box-sizing: border-box;
+  background: linear-gradient(#4a78d6, #7a8ee0 35%, #b493d8 60%, #e79ac0 80%, #f6b99a); font-family: 'Press Start 2P', monospace; color: #fffaf2; }
+.screen * { box-sizing: border-box; }
+.logo { font-family: 'Lilita One'; font-size: 64px; color: #f2c14e; -webkit-text-stroke: 10px #241c2b; paint-order: stroke fill; transform: rotate(-3deg); }
+.logo.sm { font-size: 40px; }
+.tagline { font-size: 9px; text-align: center; text-shadow: 2px 2px 0 #241c2b; }
+.note { background: #d23b3b; padding: 8px 12px; border: 3px solid #241c2b; font-size: 9px; }
+.panel { background: rgba(36,28,43,0.88); border: 4px solid #241c2b; box-shadow: inset 0 0 0 3px #f2c14e; padding: 14px; width: min(520px, 100%); display: flex; flex-direction: column; gap: 10px; }
+.panel label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 9px; }
+.panel label.chk { justify-content: flex-start; line-height: 1.6; }
+.screen input, .screen select, .dialog select { font-family: 'Press Start 2P'; font-size: 10px; padding: 8px; border: 3px solid #241c2b; background: #fffaf2; color: #241c2b; min-width: 0; }
+.screen input[type=checkbox] { width: 20px; height: 20px; }
+.join .row input { flex: 1; }
+.screen .btn { font-size: 18px; padding: 10px 16px; color: #fffaf2; }
+.file { display: inline-flex; align-items: center; }
+.code { font-family: 'Lilita One'; font-size: 54px; letter-spacing: 8px; text-align: center; color: #f2c14e; -webkit-text-stroke: 8px #241c2b; paint-order: stroke fill; }
+.link { flex: 1; font-size: 8px !important; }
+.seat { display: flex; align-items: center; gap: 10px; font-size: 9px; padding: 6px; border-left: 6px solid var(--c); background: rgba(255,255,255,0.05); }
+.seat b { font-family: 'Lilita One'; font-size: 18px; color: var(--c); -webkit-text-stroke: 4px #241c2b; paint-order: stroke fill; flex: 1; }
+.seat select { font-size: 8px; padding: 4px; }
+.seats .small { font-size: 8px; opacity: 0.8; }
+
+@media (max-width: 600px) {
+  .logo { font-size: 44px; }
+  .topbar .banner { top: 48px; font-size: 18px; }
+  #hud.live .opps { top: 84px; }
+  .dice { top: auto; bottom: 200px; left: auto; right: 10px; transform: none; }
+  .dice b { width: 34px; height: 34px; line-height: 34px; font-size: 16px; }
+  .log { display: none; }
+  .log.open { display: block; left: 6px; right: 6px; width: auto; bottom: 190px; }
+  .builds .btn i { display: none; }
+  .dialog.wide { min-width: 0; }
+  .ctr { min-width: 0; flex: 1; }
+  .roomtag { top: 76px; font-size: 6px; display: none; }
+  .me-top { flex-wrap: wrap; gap: 8px; }
+}
+
+/* ---------- tutorial coach ---------- */
+#coach { position: fixed; left: 14px; top: 64px; width: 330px; z-index: 20; background: rgba(36,28,43,0.95); border: 4px solid #241c2b; box-shadow: inset 0 0 0 3px #5ff2ff, 0 8px 0 rgba(0,0,0,0.25);
+  padding: 12px 14px 10px; font-family: 'Press Start 2P', monospace; color: #fffaf2; animation: coachIn 0.35s steps(5); }
+@keyframes coachIn { from { transform: translateY(-14px); opacity: 0; } to { transform: none; opacity: 1; } }
+.coach-head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.coach-head .fox { width: 40px; height: 48px; image-rendering: pixelated; animation: foxBob 1.2s steps(2) infinite; }
+@keyframes foxBob { 50% { transform: translateY(-3px); } }
+.coach-title { font-family: 'Lilita One'; font-size: 20px; color: #5ff2ff; -webkit-text-stroke: 4px #241c2b; paint-order: stroke fill; }
+.coach-prog { font-size: 7px; opacity: 0.7; margin-top: 3px; }
+.coach-min { margin-left: auto; width: 26px; height: 26px; background: #6a6276; color: #fff; border: 2px solid #241c2b; cursor: pointer; font-size: 14px; }
+.coach-text { font-size: 9px; line-height: 1.75; }
+.coach-text b { color: #f2c14e; font-weight: normal; }
+.coach-text b.red { color: #ff7b7b; } .coach-text b.gold { color: #ffe066; } .coach-text b.cyan { color: #5ff2ff; }
+.coach-text .tline { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.coach-text .dim { opacity: 0.65; }
+.coach-btns { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.coach-btns .btn { font-size: 15px; padding: 6px 14px; color: #fffaf2; }
+.linkbtn { background: none; border: none; color: #c9bfd6; font-family: 'Press Start 2P'; font-size: 7px; text-decoration: underline; cursor: pointer; margin-left: auto; }
+.coach-bar { height: 5px; background: #3a2f44; margin-top: 10px; } .coach-bar i { display: block; height: 100%; background: #5ff2ff; }
+#coach.min .coach-text, #coach.min .coach-btns, #coach.min .coach-bar { display: none; }
+#coach.min { width: auto; }
+.tdice { display: flex; gap: 6px; justify-content: center; margin: 4px 0 8px; }
+.tdice b { width: 30px; height: 30px; line-height: 30px; text-align: center; background: #fffaf2; color: #241c2b !important; border: 3px solid #241c2b; animation: tdice 1.6s steps(8) infinite; }
+.tdice b:nth-child(2) { animation-delay: 0.2s; }
+@keyframes tdice { 0%, 60%, 100% { transform: none; } 20% { transform: translateY(-10px) rotate(-90deg); } 40% { transform: translateY(2px) rotate(15deg); } }
+.mini { display: inline-block; width: 16px; height: 16px; background: #d8433c; border: 2px solid #241c2b; position: relative; }
+.mini.hamlet { clip-path: polygon(50% 0, 100% 45%, 100% 100%, 0 100%, 0 45%); }
+.mini.keep { width: 18px; height: 20px; clip-path: polygon(0 20%, 20% 20%, 20% 0, 40% 0, 40% 20%, 60% 20%, 60% 0, 80% 0, 80% 20%, 100% 20%, 100% 100%, 0 100%); }
+
+/* ---------- board fx ---------- */
+#fx { position: fixed; inset: 0; pointer-events: none; z-index: 15; }
+.fly { position: fixed; width: 34px; height: 42px; background: #fffaf2; border: 3px solid #241c2b; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%); box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
+.fly .px { width: 22px; height: 22px; }
+.fly.back { background: repeating-linear-gradient(45deg, #5b3a7a 0 4px, #7a4f9c 4px 8px); }
+.pop { position: fixed; transform: translate(-50%, -50%); font-family: 'Lilita One'; font-size: 26px; color: #fffaf2; -webkit-text-stroke: 5px #241c2b; paint-order: stroke fill; animation: pop 1.2s ease-out forwards; }
+.pop.good { color: #8fe35a; }
+@keyframes pop { from { opacity: 0; margin-top: 0; } 15% { opacity: 1; } to { opacity: 0; margin-top: -50px; } }
+.floatlabel { position: fixed; transform: translate(-50%, -140%); display: flex; align-items: center; gap: 4px; background: rgba(36,28,43,0.9); border: 2px solid #241c2b; padding: 3px 6px; font-family: 'Press Start 2P'; font-size: 7px; color: #fffaf2; animation: floaty 1.5s ease-in-out infinite; white-space: nowrap; }
+.floatlabel .px { width: 16px; height: 16px; }
+.floatlabel.dim { opacity: 0.7; }
+@keyframes floaty { 50% { margin-top: -6px; } }
+
+/* ---------- rules ---------- */
+.newhere { display: flex; align-items: center; gap: 12px; font-size: 10px; text-shadow: 2px 2px 0 #241c2b; }
+.rules { font-size: 9px; line-height: 1.7; text-align: left; }
+.rules h3 { font-family: 'Lilita One'; font-weight: normal; font-size: 20px; color: #f2c14e; -webkit-text-stroke: 4px #241c2b; paint-order: stroke fill; margin: 12px 0 4px; }
+.rules p, .rules ul, .rules ol { margin: 4px 0; }
+.rules li { margin: 3px 0; }
+.rules b { color: #f2c14e; font-weight: normal; }
+.costs { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; }
+.costs i { display: flex; gap: 2px; }
+.costs .px.xs { width: 16px; height: 16px; }
+.dialog.scroll { max-height: 84vh; overflow: auto; }
+
+@media (max-width: 600px) {
+  #coach { left: 6px; right: 6px; width: auto; top: auto; bottom: 186px; padding: 8px 10px; }
+  .coach-head .fox { width: 30px; height: 36px; }
+  .coach-title { font-size: 16px; }
+  .coach-text { font-size: 8px; line-height: 1.6; }
+  .coach-btns .btn { font-size: 13px; }
+  .newhere { flex-direction: column; gap: 6px; }
+  body.dialog-open #coach { top: 146px; bottom: auto; }
+  body.dialog-open #coach .coach-text, body.dialog-open #coach .coach-btns, body.dialog-open #coach .coach-bar { display: none; }
+}
+
+.st { font-family: 'Lilita One', sans-serif; color: #f2c14e; font-size: 1.3em; }
