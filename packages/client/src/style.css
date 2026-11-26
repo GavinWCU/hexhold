@@ -210,3 +210,5 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #241c2b; }
 }
 
 .st { font-family: 'Lilita One', sans-serif; color: #f2c14e; font-size: 1.3em; }
+.botnames { display: flex; flex-direction: column; gap: 6px; font-size: 9px; }
+.botnames .row { gap: 6px; }

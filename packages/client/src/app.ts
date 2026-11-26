@@ -29,12 +29,13 @@ const CHARTER_INFO: Record<CharterType, [string, string]> = {
   embargo: ['Embargo', 'Name a resource. Everyone gives you all of theirs.'],
 };
 const BOT_NAMES = ['Bramble', 'Juniper', 'Wick', 'Pip', 'Tamsin', 'Moss', 'Rook', 'Fennel'];
+const ALL_BOTS = ['Garrold', ...BOT_NAMES];
 
 function store<T>(key: string, fallback: T): T { try { const v = localStorage.getItem('hexhold.' + key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
 function save(key: string, v: unknown) { try { localStorage.setItem('hexhold.' + key, JSON.stringify(v)); } catch { /* ignore */ } }
 
-interface Settings { name: string; mode: Mode; players: number; level: BotLevel; mapType: MapType; targetVP: number; friendly: boolean }
-const settings: Settings = store('settings', { name: '', mode: 'pixel3d', players: 4, level: 'normal', mapType: 'spiral', targetVP: 10, friendly: false });
+interface Settings { name: string; mode: Mode; players: number; level: BotLevel; mapType: MapType; targetVP: number; friendly: boolean; botNames?: string[] }
+const settings: Settings = store('settings', { name: '', mode: 'smooth3d', players: 4, level: 'normal', mapType: 'spiral', targetVP: 10, friendly: false });
 const saveSettings = () => save('settings', settings);
 
 const root = () => $('#app');
@@ -71,6 +72,9 @@ function readOptions(form: HTMLElement) {
 
 function homeScreen(note = '') {
   const autosave = store<string | null>('autosave', null);
+  settings.botNames = botNameList(5); // keep all 5 so lowering the player count doesn't forget picks
+  saveSettings();
+  const botPickers = settings.botNames.slice(0, settings.players - 1).map((n, i) => botNameSelect(`data-botname="${i}"`, n)).join('');
   root().innerHTML = `
   <div class="screen home">
     <div class="logo">HEXHOLD</div>
@@ -80,6 +84,7 @@ function homeScreen(note = '') {
       <label>Your name <input name="name" maxlength="14" value="${esc(settings.name)}" placeholder="Your name"></label>
       <label>Look <select name="mode">${[['pixel3d', 'Low-poly pixel 3D'], ['smooth3d', 'Smooth 3D'], ['iso2d', 'Isometric 2D'], ['top2d', 'Top-down 2D']].map(([v, l]) => `<option value="${v}" ${v === settings.mode ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       ${optionsForm()}
+      <div class="botnames"><span>Bot names</span><div class="row wrap">${botPickers}</div></div>
     </div>
     ${store('tutorialDone', false) ? '' : '<div class="newhere"><span>New to Hexhold?</span><button class="btn go big" data-act="tutorial">Learn to play</button></div>'}
     <div class="row wrap">
@@ -111,6 +116,15 @@ function homeScreen(note = '') {
       joinScreen(code, ($('#pw') as HTMLInputElement).value);
     }
   };
+  root().onchange = (e) => {
+    const t = e.target as HTMLSelectElement;
+    const bi = t.getAttribute('data-botname');
+    if (bi === null && t.name !== 'players') return;
+    readOptions(form);
+    if (bi !== null) renameBot(settings.botNames!, Number(bi), t.value);
+    saveSettings();
+    homeScreen(); // redraw so the pickers match the player count and any swap
+  };
   const file = root().querySelector('input[type=file]') as HTMLInputElement;
   file.onchange = async () => {
     const f = file.files?.[0];
@@ -119,8 +133,26 @@ function homeScreen(note = '') {
   };
 }
 
+// The bot names picked on the home screen (remembered), topped up with Garrold first, then random ones.
+function botNameList(count: number): string[] {
+  const out = (settings.botNames ?? []).filter((n, i, a) => ALL_BOTS.includes(n) && a.indexOf(n) === i).slice(0, count);
+  const rest = ALL_BOTS.filter((n) => !out.includes(n));
+  const fill = rest[0] === 'Garrold' ? ['Garrold', ...rest.slice(1).sort(() => Math.random() - 0.5)] : rest.sort(() => Math.random() - 0.5);
+  return [...out, ...fill].slice(0, count);
+}
+
+// Picking a name another bot already has swaps the two, so names stay unique.
+function renameBot(names: string[], i: number, name: string) {
+  const j = names.indexOf(name);
+  if (j >= 0 && j !== i) names[j] = names[i];
+  names[i] = name;
+}
+
+const botNameSelect = (attr: string, current: string, taken: string[] = []) =>
+  `<select ${attr} aria-label="Bot name">${ALL_BOTS.filter((n) => n === current || !taken.includes(n)).map((n) => `<option ${n === current ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
+
 function botSeats(n: number, from: number, level: BotLevel): Seat[] {
-  const names = ['Garrold', ...BOT_NAMES.slice().sort(() => Math.random() - 0.5)];
+  const names = botNameList(n - from);
   return Array.from({ length: n - from }, (_, i) => ({ name: names[i], color: PLAYER_COLORS[from + i], kind: 'bot', level, online: true }));
 }
 
@@ -219,6 +251,7 @@ function hostLobby() {
       <div class="panel seats">
         ${seats.map((s, i) => `<div class="seat" style="--c:${s.color}"><span class="dot"></span><b>${esc(s.name)}</b>
           <span class="small">${s.kind === 'human' ? 'You (host)' : s.kind === 'remote' ? 'Friend' : `Bot`}</span>
+          ${s.kind === 'bot' ? botNameSelect(`data-name="${i}"`, s.name, seats.filter((o) => o.kind !== 'bot').map((o) => o.name)) : ''}
           ${s.kind === 'bot' ? `<select data-level="${i}">${(['easy', 'normal', 'hard'] as BotLevel[]).map((l) => `<option ${l === s.level ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}</div>`).join('')}
         <div class="small">Empty seats are played by bots. Friends who join take a bot's seat.</div>
       </div>
@@ -241,6 +274,13 @@ function hostLobby() {
     if (t.id === 'pw') { pw = (t as HTMLInputElement).value; save('lastPassword', pw); }
     const lv = t.getAttribute('data-level');
     if (lv) { seats[Number(lv)].level = (t as HTMLSelectElement).value as BotLevel; broadcastLobby(); }
+    const ni = t.getAttribute('data-name');
+    if (ni) {
+      const names = seats.map((s) => s.name);
+      renameBot(names, Number(ni), (t as HTMLSelectElement).value);
+      names.forEach((n, i) => { seats[i].name = n; });
+      draw(); broadcastLobby();
+    }
   };
 }
 
